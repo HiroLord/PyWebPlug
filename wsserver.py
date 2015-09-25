@@ -162,8 +162,9 @@ class Socket:
         self.data = self.data[3+packet.size():]
         return packet
 
-    def send(self):
-        data = self.packet.data
+    def send(self, data=None):
+        if (data == None):
+            data = self.packet.data
         length = len(data)
         ret = bytearray([129, length])
         for byte in data.encode("utf-8"):

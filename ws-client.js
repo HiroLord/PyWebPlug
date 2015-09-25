@@ -168,6 +168,10 @@ function newPacket(msgID) {
 
 function readPacket() {
     var msgID = parseInt(_data.substring(0,3));
+    if (_inMsgStructs[msgID] === undefined) {
+        alert("MsgID " + String(msgID) + " does not exist.");
+        return;
+    }
     return _inMsgStructs[msgID].fillFromData();
 }
 
