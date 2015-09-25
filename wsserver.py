@@ -139,8 +139,9 @@ def extend(n, l):
 
 class Socket:
 
-    def __init__(self, socket, cID):
+    def __init__(self, socket, webSocket, cID):
         self.socket = socket
+        self.webSocket = webSocket
         self.cID = cID
         self.data = ""
         self.hostCode = ""
@@ -216,16 +217,20 @@ class Socket:
         if (len(data) < 1):
             return
         strData = ''
-        datalen = (0x7f & data[1])
-        if (datalen > 0):
-            mask_key = data[2:6]
-            masked_data = data[6:(6+datalen)]
-            unmasked_data = [masked_data[i] ^ mask_key[i%4] for i in range(len(masked_data))]
-            strData = bytearray(unmasked_data).decode('utf-8')
+        if self.webSocket:
+            datalen = (0x7f & data[1])
+            if (datalen > 0):
+                mask_key = data[2:6]
+                masked_data = data[6:(6+datalen)]
+                unmasked_data = [masked_data[i] ^ mask_key[i%4] for i in range(len(masked_data))]
+                strData = bytearray(unmasked_data).decode('utf-8')
+        else:
+            strData = data.decode('utf-8')
         self.data = self.data + strData
         #self.allData = self.allData + strData
         #print(self.name, self.allData)
-        self.parseData(data[6+datalen:])
+        if (self.webSocket):
+            self.parseData(data[6+datalen:])
 
     def disconnect(self):
         print("Lost client.")
@@ -246,29 +251,33 @@ def acceptClient(s):
         if (": " in header):
             app = header.split(": ")
             headers[app[0]] = app[1]
-    
-    guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+ 
+    if len(headers) > 0:
+        webSocket = True
+        guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-    accept = ""
-    if "Sec-WebSocket-Key" in headers:
-        key = headers['Sec-WebSocket-Key'].rstrip()
-        key = bytes(key + guid, 'UTF-8')
-        key = hashlib.sha1(key).digest()
-        accept = base64.b64encode(key)
-        accept = accept.decode('UTF-8')
+        accept = ""
+        if "Sec-WebSocket-Key" in headers:
+            key = headers['Sec-WebSocket-Key'].rstrip()
+            key = bytes(key + guid, 'UTF-8')
+            key = hashlib.sha1(key).digest()
+            accept = base64.b64encode(key)
+            accept = accept.decode('UTF-8')
 
-    s.send(bytes(("" +
-    "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-    "Upgrade: WebSocket\r\n" +
-    "Connection: Upgrade\r\n" +
-    "WebSocket-Origin: http://localhost:8888\r\n" +
-    "WebSocket-Location: ws://localhost:9876/\r\n" +
-    "WebSocket-Protocol: sample\r\n" +
-    "Sec-WebSocket-Accept: " + str(accept) +
-    "").strip() + '\r\n\r\n', 'UTF-8'))
+        s.send(bytes(("" +
+        "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+        "Upgrade: WebSocket\r\n" +
+        "Connection: Upgrade\r\n" +
+        "WebSocket-Origin: http://localhost:8888\r\n" +
+        "WebSocket-Location: ws://localhost:9876/\r\n" +
+        "WebSocket-Protocol: sample\r\n" +
+        "Sec-WebSocket-Accept: " + str(accept) +
+        "").strip() + '\r\n\r\n', 'UTF-8'))
+    else:
+        webSocket = False
 
     _sockets.append(s)
-    client = Socket(s, cID)
+    client = Socket(s, webSocket, cID)
     _clients.append(client)
     cID += 1
     return client

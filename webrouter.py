@@ -20,20 +20,22 @@ class Client:
             else:
                 self.host = findHost(code)
                 if self.host:
-                    self.pID = self.host.getNextpID()
-                    self.host.players[self.pID] = self
                     confirm(self)
         else:
             if self.host.socket:
-                self.host.socket.send(str(self.pID)+data)
+                self.host.socket.send(self.sID + data)
             else:
                 print("Host's socket is closed.")
 
     # This is called to confirm to the client that they have been accepted,
     # after they send us their details.
     def confirm(self):
+        self.pID = self.host.getNextpID()
+        self.host.players[self.pID] = self
         needsConfirmation = False
         self.socket.send("999")
+        self.sID = extend(self.pID, 2)
+        self.host.send("998" + self.sID)
 
     def becomeHost(self):
         host = Host(self.socket, newHostCode())
@@ -88,6 +90,12 @@ def newHostCode():
     if findHost(code):
         return newHostCode()
     return code
+
+def extend(v, l):
+    out = str(v)
+    while len(out) < l:
+        out = "0" + out
+    return out
 
 # This handles a new client.
 # We need to hand them to an object
