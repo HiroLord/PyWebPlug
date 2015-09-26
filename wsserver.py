@@ -217,7 +217,6 @@ class Socket:
         if (len(data) == 0):
             self.disconnect()
             return
-        print("Got data!")
         self.parseData(data)
         
     def parseData(self, data):
@@ -234,7 +233,6 @@ class Socket:
         else:
             strData = data.decode('utf-8')
         self.data = self.data + strData
-        print("Data is now", self.data)
         #self.allData = self.allData + strData
         #print(self.name, self.allData)
         if (self.webSocket):
