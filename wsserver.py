@@ -303,7 +303,6 @@ def handleNetwork():
     for client in clientsReady:
         for c in _clients:
             if c.socket == client:
-                print("Client has data");
                 c.recv()
     return None
 
