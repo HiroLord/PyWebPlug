@@ -157,6 +157,11 @@ class Socket:
     def read(self):
         self.packet.read(data)
 
+    def readRaw(self):
+        out = self.data[:]
+        self.data = []
+        return out
+
     def readPacket(self):
         msgID = int(self.data[0:3])
         packet = _inMsgStructs[msgID].fillFromData(self.data)
@@ -245,7 +250,9 @@ def acceptClient(s):
     global cID
     global _sockets
     print("Accepting client...")
-    rec = s.recv(4096).decode("utf-8").split('\n')
+    rec = s.recv(4096)
+    print(rec)
+    rec = rec.decode("utf-8").split('\n')
     headers = {}
     for header in rec:
         if (": " in header):
@@ -298,7 +305,7 @@ def handleNetwork():
 
 def startServer(port=8886):
     global _server
-    _server = socket.socket()
+    _server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     _server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     _server.bind(('', 8886))
     _server.listen(5)

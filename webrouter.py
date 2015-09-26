@@ -6,14 +6,21 @@ from wsserver import *
 
 from time import sleep
 
+def setupMessages():
+    return
+
+
 class Client:
 
     def __init__(self, socket):
         self.socket = socket
+        self.needsConfirmation = True
     
     def handle(self):
         data = self.socket.readRaw()
-        if needsConfirmation:
+        if len(data) > 0:
+            print(data)
+        if self.needsConfirmation:
             code = data[0:4]
             if code == "0000":
                 self.becomeHost()
@@ -79,7 +86,7 @@ class Host:
         return
 
 def findHost(code):
-    for host in host:
+    for host in hosts:
         if host.hostCode == code:
             return host
     return None
@@ -101,9 +108,8 @@ def extend(v, l):
 # We need to hand them to an object
 # so that we can read and write from it
 def handle(socket):
-    global pID, clients
-    pID += 1
-    client = Client(socket, pID)
+    global clients
+    client = Client(socket)
     clients.append(client)
 
 def main():
