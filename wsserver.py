@@ -159,7 +159,7 @@ class Socket:
 
     def readRaw(self):
         out = self.data[:]
-        self.data = []
+        self.data = ""
         return out
 
     def readPacket(self):
@@ -213,9 +213,11 @@ class Socket:
             data = bytearray(self.socket.recv(4096))
         except:
             self.disconnect()
+            return
         if (len(data) == 0):
             self.disconnect()
             return
+        print("Got data!")
         self.parseData(data)
         
     def parseData(self, data):
@@ -232,6 +234,7 @@ class Socket:
         else:
             strData = data.decode('utf-8')
         self.data = self.data + strData
+        print("Data is now", self.data)
         #self.allData = self.allData + strData
         #print(self.name, self.allData)
         if (self.webSocket):
@@ -251,7 +254,7 @@ def acceptClient(s):
     global _sockets
     print("Accepting client...")
     rec = s.recv(4096)
-    print(rec)
+    print("Handshake:", rec)
     rec = rec.decode("utf-8").split('\n')
     headers = {}
     for header in rec:
@@ -281,11 +284,13 @@ def acceptClient(s):
         "Sec-WebSocket-Accept: " + str(accept) +
         "").strip() + '\r\n\r\n', 'UTF-8'))
     else:
+        s.send(bytes("1", 'utf-8'))
         webSocket = False
 
     _sockets.append(s)
     client = Socket(s, webSocket, cID)
     _clients.append(client)
+    print("Client accepted. Websocket", webSocket)
     cID += 1
     return client
 
@@ -300,6 +305,7 @@ def handleNetwork():
     for client in clientsReady:
         for c in _clients:
             if c.socket == client:
+                print("Client has data");
                 c.recv()
     return None
 
