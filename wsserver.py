@@ -159,6 +159,8 @@ class Socket:
 
     def readRaw(self):
         out = self.data[:]
+        ##if len(out) > 0:
+        ##    print(out)
         self.data = ""
         return out
 
