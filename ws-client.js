@@ -208,8 +208,12 @@ function canHandleMsg() {
     }
     var rawMsgID = _data.substring(0,3);
     var msgID = parseInt(rawMsgID);
+    if (isNaN(msgID)) {
+        _data = _data.substring(1);
+        return canHandleMsg();
+    }
     if (_inMsgStructs[msgID] === undefined) {
-        alert("Invalid MsgID " + rawMsgID);
+        alert("Invalid MsgID '" + rawMsgID + "' size " + String(rawMsgID.length));
         return false;
     }
     return _inMsgStructs[msgID].canHandle(_data);
