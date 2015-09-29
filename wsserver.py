@@ -174,7 +174,10 @@ class Socket:
         if (data == None):
             data = self.packet.data
         length = len(data)
-        ret = bytearray([129, length])
+        if self.webSocket:
+            ret = bytearray([129, length])
+        else:
+            ret = bytearray([])
         for byte in data.encode("utf-8"):
             ret.append(byte)
         self.socket.send(ret)
