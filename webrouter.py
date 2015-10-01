@@ -1,7 +1,8 @@
 # This file runs the websockets.
 
 import string, cgi, time
-
+import sys
+sys.path.insert(0, 'PyWebPlug')
 from wsserver import *
 
 from time import sleep
@@ -17,40 +18,52 @@ class Client:
         self.needsConfirmation = True
     
     def handle(self):
-        data = self.socket.readRaw()
-        if len(data) > 0:
-            print(data)
+        if (self.socket):
+            try:
+                data = self.socket.readRaw()
+            except:
+                self.socket = None
+        if len(data) == 0:
+            return
+        print("Data:", data)
         if self.needsConfirmation:
-            code = data[0:4]
+            code = data[3:7]
             if code == "0000":
+                print("Becoming a host!")
                 self.becomeHost()
             else:
+                print("Trying to find host", code)
                 self.host = findHost(code)
                 if self.host:
-                    confirm(self)
+                    print("Found host.")
+                    self.confirm()
+                else:
+                    print("No host found.")
         else:
             if self.host.socket:
-                self.host.socket.send(self.sID + data)
-            else:
-                print("Host's socket is closed.")
+                try:
+                    self.host.socket.send(data)
+                except:
+                    self.host.socket = None
+                    print("Host's socket is closed.")
 
     # This is called to confirm to the client that they have been accepted,
     # after they send us their details.
     def confirm(self):
         self.pID = self.host.getNextpID()
         self.host.players[self.pID] = self
-        needsConfirmation = False
-        self.socket.send("999")
+        self.needsConfirmation = False
         self.sID = extend(self.pID, 2)
-        self.host.send("998" + self.sID)
+        self.socket.send("999" + self.sID)
+        self.host.socket.send("998" + self.sID)
 
     def becomeHost(self):
         host = Host(self.socket, newHostCode())
         clients.remove(self)
-        hosts.add(host)
+        hosts.append(host)
 
     def disconnect(self):
-        print("Lost client.")
+        print("Lost client...")
         clients.remove(self)
         self.socket = None
         return
@@ -64,20 +77,45 @@ class Host:
         self.pID = 0
         self.socket.send("999" + str(self.hostCode))
 
+        self.writingTo = 0
+
+        self.data = ""
+
     def getNextpID(self):
         self.pID += 1
         return self.pID
 
     def handle(self):
-        data = self.socket.readRaw()
-        pID = int(data[0:2])
-        if players[pID]:
-            if players[pID].socket:
-                players[pID].send(data[2:])
-            else:
-                print("Client's socket is closed.")
+        if (self.socket):
+            try:
+                self.data += self.socket.readRaw()
+            except:
+                self.socket = None
+        if len(self.data) == 0:
+            return
+        print("Host says: "+self.data)
+        ind = self.data.find("*")
+        if (ind < 0):
+            return
+        if self.writingTo == 0:
+            try:
+                self.writingTo = int(self.data[0:2])
+            except:
+                self.data = self.data[1:]
+                self.handle()
+                return;
+        pID = self.writingTo
+        if self.players[pID]:
+            if self.players[pID].socket:
+                try:
+                    self.players[pID].socket.send(self.data[2:ind])
+                except:
+                    self.players[pID].socket = None;
+                    print("Client's socket closed.")
         else:
             print("Host", self.hostCode," tried to send a messaged to non-existant player", pID)
+        self.data = self.data[ind+2:]
+        self.writingTo = 0
         
     def disconnect(self):
         print("Lost host.")
@@ -126,7 +164,7 @@ def main():
                 client.handle()
             for host in hosts:
                 host.handle()
-            sleep(0.001)
+            sleep(0.01)
     except KeyboardInterrupt:
         print(' received, closing server.')
         server.close()
