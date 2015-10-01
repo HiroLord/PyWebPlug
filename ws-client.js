@@ -129,12 +129,16 @@ function createMsgStruct(msgID, outgoing) {
         return this;
     }
 
-    struct.send = function() {
+    struct.send = function(prepend) {
         if (this.nextPart < this.numParts) {
             alert("MSG struct was not finished being written!");
             return;
         }
-        return _ws.send(this.data);
+        var out = this.data;
+        if (prepend) {
+            out = prepend + out + "*";
+        }
+        return _ws.send(out);
     }
 
     struct.addChars = function(numChars) {
@@ -225,7 +229,7 @@ function httpGet(url, callback, carryout) {
 	xmlHttp.onreadystatechange = function() {
 		if (xmlHttp.readyState == 4) {
 			if (xmlHttp.status == 200) {
-				alert(xmlHttp.responseText);
+                callback(xmlHttp.responseText, carryout);
 			}
 		}
 	}

@@ -114,7 +114,7 @@ class Host:
                     print("Client's socket closed.")
         else:
             print("Host", self.hostCode," tried to send a messaged to non-existant player", pID)
-        self.data = self.data[ind+2:]
+        self.data = self.data[ind+1:]
         self.writingTo = 0
         
     def disconnect(self):
