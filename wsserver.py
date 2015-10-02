@@ -234,7 +234,11 @@ class Socket:
                 mask_key = data[2:6]
                 masked_data = data[6:(6+datalen)]
                 unmasked_data = [masked_data[i] ^ mask_key[i%4] for i in range(len(masked_data))]
-                strData = bytearray(unmasked_data).decode('utf-8')
+                try:
+                    strData = bytearray(unmasked_data).decode('utf-8')
+                except:
+                    print("Unable to parse data.")
+                    strData = ""
         else:
             strData = data.decode('utf-8')
         self.data = self.data + strData

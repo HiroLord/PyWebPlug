@@ -16,8 +16,10 @@ class Client:
     def __init__(self, socket):
         self.socket = socket
         self.needsConfirmation = True
+        self.name = "Name"
     
     def handle(self):
+        data = ""
         if (self.socket):
             try:
                 data = self.socket.readRaw()
@@ -26,8 +28,12 @@ class Client:
         if len(data) == 0:
             return
         print("Data:", data)
+        data.replace("PING", "")
         if self.needsConfirmation:
             code = data[3:7]
+            size = int(data[7:10])
+            name = data[10:10+size]
+            print(name)
             if code == "0000":
                 print("Becoming a host!")
                 self.becomeHost()
@@ -36,6 +42,7 @@ class Client:
                 self.host = findHost(code)
                 if self.host:
                     print("Found host.")
+                    self.name = name
                     self.confirm()
                 else:
                     print("No host found.")
@@ -50,12 +57,22 @@ class Client:
     # This is called to confirm to the client that they have been accepted,
     # after they send us their details.
     def confirm(self):
-        self.pID = self.host.getNextpID()
-        self.host.players[self.pID] = self
         self.needsConfirmation = False
+        found = False
+        for p in self.host.players:
+            player = self.host.players[p]
+            if (player.name == self.name):
+                self.pID = player.pID
+                found = True
+                break;
+        if (found != True):
+            self.pID = self.host.getNextpID()
+        print("Player ID is", self.pID);
+        self.host.players[self.pID] = self
         self.sID = extend(self.pID, 2)
         self.socket.send("999" + self.sID)
-        self.host.socket.send("998" + self.sID)
+        if (found != True):
+            self.host.socket.send("998" + self.sID + extend(len(self.name), 3) + self.name)
 
     def becomeHost(self):
         host = Host(self.socket, newHostCode())
@@ -86,6 +103,7 @@ class Host:
         return self.pID
 
     def handle(self):
+        data = ""
         if (self.socket):
             try:
                 self.data += self.socket.readRaw()
@@ -94,6 +112,7 @@ class Host:
         if len(self.data) == 0:
             return
         print("Host says: "+self.data)
+        self.data.replace("PING", "")
         ind = self.data.find("*")
         if (ind < 0):
             return
