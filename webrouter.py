@@ -23,6 +23,8 @@ class Client:
         if (self.socket):
             try:
                 data = self.socket.readRaw()
+                if (data == None):
+                    return self.disconnect()
             except:
                 self.socket = None
         if len(data) == 0:
@@ -51,7 +53,7 @@ class Client:
                 try:
                     self.host.socket.send(data)
                 except:
-                    self.host.socket = None
+                    self.host.disconnect()
                     print("Host's socket is closed.")
 
     # This is called to confirm to the client that they have been accepted,
@@ -67,10 +69,12 @@ class Client:
                 break;
         if (found != True):
             self.pID = self.host.getNextpID()
-        print("Player ID is", self.pID);
+        print("Player ID is", self.pID)
         self.host.players[self.pID] = self
         self.sID = extend(self.pID, 2)
-        self.socket.send("999" + self.sID)
+        html = "game.html"
+        script = "script.js"
+        self.socket.send("999" + self.sID + extend(len(html), 3) + html + extend(len(script), 3) + script)
         if (found != True):
             self.host.socket.send("998" + self.sID + extend(len(self.name), 3) + self.name)
 
@@ -106,9 +110,13 @@ class Host:
         data = ""
         if (self.socket):
             try:
-                self.data += self.socket.readRaw()
+                raw = self.socket.readRaw()
+                if raw == None:
+                    return self.disconnect()
+                else:
+                    self.data += raw
             except:
-                self.socket = None
+                self.disconnect()
         if len(self.data) == 0:
             return
         print("Host says: "+self.data)
@@ -170,6 +178,7 @@ def handle(socket):
     clients.append(client)
 
 def main():
+    print(sys.argv)
     global gameStarted
     global stage
     try:

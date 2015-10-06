@@ -158,6 +158,8 @@ class Socket:
         self.packet.read(data)
 
     def readRaw(self):
+        if (self.socket == None):
+            return None
         out = self.data[:]
         ##if len(out) > 0:
         ##    print(out)
@@ -165,6 +167,8 @@ class Socket:
         return out
 
     def readPacket(self):
+        if (self.socket == None):
+            return None
         msgID = int(self.data[0:3])
         packet = _inMsgStructs[msgID].fillFromData(self.data)
         self.data = self.data[3+packet.size():]
