@@ -74,7 +74,7 @@ class Client:
         self.sID = extend(self.pID, 2)
         html = "game.html"
         script = "script.js"
-        self.socket.send("999" + self.sID + extend(len(html), 3) + html + extend(len(script), 3) + script)
+        self.socket.send("999" + self.sID + extend(len(html), 3) + html)# + extend(len(script), 3) + script)
         if (found != True):
             self.host.socket.send("998" + self.sID + extend(len(self.name), 3) + self.name)
 
