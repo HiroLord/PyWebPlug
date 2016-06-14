@@ -12,12 +12,19 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             if self.path == '/':
                 self.path = "/index.html"
-            f = open(curdir + sep + self.path)
-            out = f.read()
+            if self.path == '/host':
+                self.path == '/host.html'
+            if self.path[0:4] == "/lib":
+                self.path = "/PyWebPlug" + self.path[4:]
+            qInd = self.path.find("?")
+            if (qInd >= 0):
+                request = self.path[qInd:]
+                self.path = self.path[:qInd]
             ext = self.path.split('.')
             ext = ext[len(ext)-1]
-            if (ext != '.ico'):
-                out = bytes(out, 'utf-8')
+            read = 'rb'
+            with open(curdir + sep + self.path, read) as f:
+                out = f.read()
             self.gen_headers(ext)
             self.wfile.write(out)
             f.close()
@@ -36,12 +43,23 @@ class MyHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        pass
+        path = self.path[4:]
+        length = int(self.headers['Content-Length'])
+        body = json.loads(self.rfile.read(length).decode("utf-8"))       
+
+def parseHeaders(headers):
+    headers = headers.split('\n')
+    out = {}
+    for header in headers:
+        parts = header.split(":")
+        if len(parts) > 1:
+            out[parts[0]] = parts[1]
+    return out
 
 def main():
     try:
         # Server on the standard webserver port of 80.
-        server = HTTPServer(('', 80), MyHandler)
+        server = HTTPServer(('', 8001), MyHandler)
         print("Starting webpage server...")
         server.serve_forever()
     except KeyboardInterrupt:
